@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapNews | Your Daily Summary</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+    <div class="title-bar">
+        <div class="logo">
+            <i class="fas fa-newspaper"></i>
+            <span>SnapNews</span>
+        </div>
+        
+        <nav class="main-nav">
+            <a href="#" class="active"><i class="fas fa-home"></i> Home</a>
+            <a href="#"><i class="fas fa-heart"></i> Interests</a>
+            <a href="/chatbot"><i class="fas fa-robot"></i> Chatbot</a>
+            <a href="#"><i class="fas fa-cog"></i> Settings</a>
+        </nav>
+        
+        <div class="user-controls">
+           
+            <div class="user-menu">
+                <img src="https://ui-avatars.com/api/?name=John+Doe&background=4361ee&color=fff" alt="User">
+                <span>User</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="user-sidebar">
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=John+Doe&background=4361ee&color=fff" alt="User">
+                <h3>User</h3>
+                <p>Premium Member</p>
+            </div>
+            
+            
+            <div class="quick-actions">
+                <button class="btn-primary"><i class="fas fa-plus"></i> Add Interest</button>
+              
+            </div>
+        </aside>
+
+        <main class="news-feed">
+            <div class="feed-header">
+                <h2>Today's Digest</h2>
+                <div class="date-filter">
+                    <span>May 5, 2023</span>
+                    <select>
+                        <option>Today</option>
+                        <option>Yesterday</option>
+                        <option>This Week</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="news-cards">
+                <!-- News Card 1 -->
+                <div class="news-card">
+                    <div class="card-header">
+                        <span class="category technology">Technology</span>
+                        <span class="time">2h ago</span>
+                    </div>
+                    <h3>OpenAI Announces New AI Model That Can Generate Videos</h3>
+                    <p class="summary">OpenAI has unveiled its latest AI model capable of generating short video clips from text descriptions. The model shows significant improvements in coherence and realism compared to previous attempts...</p>
+                    <div class="card-footer">
+                        <a href="#" class="source-link"><i class="fas fa-external-link-alt"></i> Read on TechCrunch</a>
+                        <button class="save-btn"><i class="far fa-bookmark"></i></button>
+                    </div>
+                </div>
+                
+                <!-- News Card 2 -->
+                <div class="news-card">
+                    <div class="card-header">
+                        <span class="category business">Business</span>
+                        <span class="time">4h ago</span>
+                    </div>
+                    <h3>Federal Reserve Signals Potential Rate Cuts Amid Economic Slowdown</h3>
+                    <p class="summary">The Federal Reserve has indicated it may cut interest rates in the coming months as economic growth shows signs of slowing. Analysts predict this could lead to...</p>
+                    <div class="card-footer">
+                        <a href="#" class="source-link"><i class="fas fa-external-link-alt"></i> Read on Bloomberg</a>
+                        <button class="save-btn"><i class="far fa-bookmark"></i></button>
+                    </div>
+                </div>
+                
+                <!-- News Card 3 -->
+                <div class="news-card">
+                    <div class="card-header">
+                        <span class="category sports">Sports</span>
+                        <span class="time">6h ago</span>
+                    </div>
+                    <h3>NBA Finals: Denver Nuggets Take Game 1 Against Miami Heat</h3>
+                    <p class="summary">The Denver Nuggets secured a victory in Game 1 of the NBA Finals with a dominant performance from Nikola Jokić who recorded a triple-double. The Heat struggled to contain...</p>
+                    <div class="card-footer">
+                        <a href="#" class="source-link"><i class="fas fa-external-link-alt"></i> Read on ESPN</a>
+                        <button class="save-btn"><i class="far fa-bookmark"></i></button>
+                    </div>
+                </div>
+                
+                <!-- News Card 4 -->
+                <div class="news-card">
+                    <div class="card-header">
+                        <span class="category science">Science</span>
+                        <span class="time">8h ago</span>
+                    </div>
+                    <h3>Researchers Discover Potential Breakthrough in Quantum Computing Stability</h3>
+                    <p class="summary">A team at MIT has developed a new method to maintain quantum coherence for significantly longer periods, potentially solving one of the biggest challenges in practical quantum computing...</p>
+                    <div class="card-footer">
+                        <a href="#" class="source-link"><i class="fas fa-external-link-alt"></i> Read on Nature</a>
+                        <button class="save-btn"><i class="far fa-bookmark"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="load-more">
+                <button class="btn-primary">Load More Stories</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="home.js"></script>
+</body>
+</html>
