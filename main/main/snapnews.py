@@ -31,7 +31,7 @@ app = FastAPI(title="SnapNews Backend: Translation + Chat")
 # =========================
 
 # Set Gemini API Key
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBzPn7Az1ywQK1NFOwmGH4YdbJX1FWX4d4" #change it into .env
+os.environ["GOOGLE_API_KEY"] = "" #change it into .env
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
 # Load embedder and Gemini model
