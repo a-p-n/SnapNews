@@ -8,12 +8,18 @@ const PORT = 3000;
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy API requests to FastAPI server
-app.use('/api', createProxyMiddleware({
+app.use('/api/auth', createProxyMiddleware({
     target: 'http://localhost:8000',
     changeOrigin: true,
-    pathRewrite: { '^/api': '' }
+    pathRewrite: { '^/api/auth': '/auth' },
 }));
+
+// Proxy API requests to FastAPI server
+// app.use('/api', createProxyMiddleware({
+//     target: 'http://localhost:8000',
+//     changeOrigin: true,
+//     pathRewrite: { '^/api': '' }
+// }));
 
 app.get('/', (req, res) => {
     res.redirect('/signup');
