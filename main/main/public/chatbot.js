@@ -1,12 +1,27 @@
+document.getElementById('snapnews').addEventListener('click', function () {
+    window.location.href = '/home';
+});
+
+function toggleDropdown() {
+    const dropdown = document.getElementById("userDropdown");
+    dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
+}
+
+document.addEventListener('click', function (e) {
+    const menu = document.querySelector('.user-menu');
+    const dropdown = document.getElementById("userDropdown");
+    if (!menu.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const chatMessages = document.getElementById('chatMessages');
     const userInput = document.getElementById('userInput');
     const sendButton = document.getElementById('sendButton');
     
-    // Send message when button is clicked
     sendButton.addEventListener('click', sendMessage);
     
-    // Send message when Enter key is pressed
     userInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             sendMessage();
@@ -17,11 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const message = userInput.value.trim();
         if (message === '') return;
         
-        // Add user message to chat
         addMessage(message, 'user');
         userInput.value = '';
         
-        // Show loading indicator
         const loadingDiv = document.createElement('div');
         loadingDiv.className = 'bot-message';
         loadingDiv.innerHTML = `
@@ -30,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         chatMessages.appendChild(loadingDiv);
-        
+
         try {
             const response = await getBotResponse(message);
             // Remove loading indicator
@@ -44,8 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
             addMessage("Sorry, I encountered an error. Please try again.", 'bot');
             console.error('Error:', error);
         }
-        
-
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
@@ -60,7 +71,6 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.appendChild(contentDiv);
         chatMessages.appendChild(messageDiv);
         
-
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
@@ -76,11 +86,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     top_k: 6
                 })
             });
-            
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            
+
             const data = await response.json();
             return data.answer;
         } catch (error) {

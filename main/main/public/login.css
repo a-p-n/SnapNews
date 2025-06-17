@@ -179,6 +179,7 @@ body {
 }
 
 .signup-link {
+    margin-top: 16px;
     text-align: center;
     font-size: 14px;
     color: var(--text-light);

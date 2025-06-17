@@ -161,32 +161,8 @@ body {
     margin-left: 16px;
 }
 
-.social-signup {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-.social-btn {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: white;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.social-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
-
 .signup-link {
+    margin-top: 16px;
     text-align: center;
     font-size: 14px;
     color: var(--text-light);

@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const usernameError = document.getElementById('usernameError');
     const passwordError = document.getElementById('passwordError');
 
-    // Toggle password visibility
     togglePassword.addEventListener('click', function () {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
@@ -59,35 +58,31 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const payload = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+
+            fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                localStorage.setItem('loggedIn', 'true');
-                window.location.href = '/home';
-            } else {
-                alert(result.error || 'Login failed');
-                loginBtn.textContent = 'Sign In';
-                loginBtn.disabled = false;
-            }
+                body: JSON.stringify(payload)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        localStorage.setItem('username', data.username);
+                        window.location.href = '/home';
+                    } else {
+                        alert(data.error);
+                    }
+                });
+            
         } catch (error) {
             console.error('Login error:', error);
-            alert('An error occurred. Please try again.');
+            alert(error.message || 'An error occurred during login');
             loginBtn.textContent = 'Sign In';
             loginBtn.disabled = false;
         }
-    });
-
-    // Social login buttons
-    document.querySelectorAll('.social-btn').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            alert('Social login would be implemented here');
-        });
     });
 });

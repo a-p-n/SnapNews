@@ -31,28 +31,23 @@ app.post('/auth/signup', async (req, res) => {
     }
 
     try {
-        // Check if user already exists
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
         if (existingUser) {
             return res.json({ success: false, error: 'Email or username already in use' });
         }
 
-        // Hash password
         const passwordHash = await bcrypt.hash(password, 10);
 
-        // Save new user
         const newUser = new User({ fullName, email, username, passwordHash });
         await newUser.save();
 
         res.json({ success: true });
     } catch (err) {
-        console.error(err);
+        console.error('Signup error:', err);
         res.json({ success: false, error: 'Error creating user' });
     }
 });
 
-
-// Login route
 app.post('/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -61,29 +56,26 @@ app.post('/auth/login', async (req, res) => {
             return res.json({ success: false, error: 'Missing fields' });
         }
 
-        // 🔍 STEP 1: Find the user by username in MongoDB
         const user = await User.findOne({ username });
 
         if (!user) {
             return res.json({ success: false, error: 'Invalid username or password' });
         }
 
-        // 🔐 STEP 2: Compare entered password with hashed password in DB
         const isMatch = await bcrypt.compare(password, user.passwordHash);
 
         if (!isMatch) {
             return res.json({ success: false, error: 'Invalid username or password' });
         }
 
-        // 🎉 STEP 3: If match, login successful
-        res.json({ success: true });
+        res.json({ success: true, username: user.username });
 
     } catch (err) {
         console.error('Login error:', err);
         res.json({ success: false, error: 'Server error' });
     }
 });
-  
+
 app.listen(PORT, () => {
-  console.log(`Auth server running at http://localhost:${PORT}`);
+    console.log(`Auth server running at http://localhost:${PORT}`);
 });
