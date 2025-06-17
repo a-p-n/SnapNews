@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    function sendMessage() {
+    async function sendMessage() {
         const message = userInput.value.trim();
         if (message === '') return;
         
@@ -21,15 +21,32 @@ document.addEventListener('DOMContentLoaded', function() {
         addMessage(message, 'user');
         userInput.value = '';
         
-        // Simulate bot typing
-        setTimeout(() => {
+        // Show loading indicator
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'bot-message';
+        loadingDiv.innerHTML = `
+            <div class="message-content">
+                <p><i class="fas fa-spinner fa-spin"></i> Thinking...</p>
+            </div>
+        `;
+        chatMessages.appendChild(loadingDiv);
+        
+        try {
+            const response = await getBotResponse(message);
+            // Remove loading indicator
+            chatMessages.removeChild(loadingDiv);
             // Add bot response
-            const response = getBotResponse(message);
             addMessage(response, 'bot');
-            
-            // Scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1000);
+        } catch (error) {
+            // Remove loading indicator
+            chatMessages.removeChild(loadingDiv);
+            // Add error message
+            addMessage("Sorry, I encountered an error. Please try again.", 'bot');
+            console.error('Error:', error);
+        }
+        
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
     function addMessage(text, sender) {
@@ -43,20 +60,32 @@ document.addEventListener('DOMContentLoaded', function() {
         messageDiv.appendChild(contentDiv);
         chatMessages.appendChild(messageDiv);
         
-        // Scroll to bottom
+
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
     
-    function getBotResponse(userMessage) {
-        // Simple response logic - in a real app, you'd call an API
-        const lowerMessage = userMessage.toLowerCase();
-        
-        if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-            return "Hello! How can I help you with today's news?";
-        } else if (lowerMessage.includes('news') || lowerMessage.includes('update')) {
-            return "Here's the latest: Scientists made a breakthrough in quantum computing today. Would you like more details?";
-        } else {
-            return "I can help answer questions about today's news. Try asking about specific topics like technology, sports, or business.";
+    async function getBotResponse(userMessage) {
+        try {
+            const response = await fetch('http://localhost:8000/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: userMessage,
+                    top_k: 6
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            const data = await response.json();
+            return data.answer;
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
         }
     }
 });

@@ -9,7 +9,6 @@ const PORT = 8000;
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB (replace URI with your own)
 mongoose.connect('mongodb://localhost:27017/snapnews_auth', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
