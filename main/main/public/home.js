@@ -15,34 +15,28 @@ document.addEventListener('click', function (e) {
     }
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const dateFilter = document.querySelector('.date-filter select');
-    dateFilter.addEventListener('change', function() {
-       
-        alert(`Loading news for ${this.value}`);
-    });
-    
+    if (dateFilter) {
+        dateFilter.addEventListener('change', function () {
+            alert(`Loading news for ${this.value}`);
+        });
+    }
+
     const loadMoreBtn = document.querySelector('.load-more button');
-    loadMoreBtn.addEventListener('click', function() {
-     
-        alert('Loading more news articles...');
-    });
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', function () {
+            alert('Loading more news articles...');
+        });
+    }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
-    const username = localStorage.getItem('username');
-    console.log('Loaded username:', username);
-    if (username) {
-        document.getElementById('username-display').textContent = username;
+    const username = localStorage.getItem('username') || "User";
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=4361ee&color=fff`;
 
-        const profileName = document.querySelector('.user-profile h3');
-        if (profileName) profileName.textContent = username;
-
-        const avatars = document.querySelectorAll('img[src*="ui-avatars.com"]');
-        avatars.forEach(img => {
-            img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=4361ee&color=fff`;
-        });
-    }
+    document.querySelectorAll('#user-name').forEach(el => el.textContent = username);
+    document.querySelectorAll('#user-avatar').forEach(el => el.src = avatarUrl);
 });
 
 document.addEventListener('DOMContentLoaded', () => {

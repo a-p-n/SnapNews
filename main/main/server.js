@@ -104,6 +104,7 @@ app1.post('/auth/signup', async (req, res) => {
 app1.post('/auth/login', async (req, res) => {
     try {
         const { username, password } = req.body;
+        console.log('Username:', username);
 
         if (!username || !password) {
             return res.json({ success: false, error: 'Missing fields' });
