@@ -63,7 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadNews() {
         container.innerHTML = '';
         try {
-            const res = await fetch('http://localhost:8000/news'); //hard
+            const username = localStorage.getItem("username");
+            const res = await fetch(`http://localhost:8000/news?username=${encodeURIComponent(username)}`);//hard
             const articles = await res.json();
             articles.forEach(renderCard);
         } catch (e) {
@@ -129,18 +130,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
     async function saveInterest(topic) {
-        try {
-            const res = await fetch('http://localhost:8000/interests', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic })
-            });
-            if (!res.ok) throw new Error('Failed to save interest');
-        } catch (e) {
-            console.error('Error saving interest:', e);
-            alert('Failed to save interest. See console.');
-        }
+    const username = localStorage.getItem("username");  // assume it's stored on login
+    if (!username) {
+        alert("User not logged in");
+        return;
     }
+
+    try {
+        const res = await fetch('http://localhost:8000/auth/interests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, topic })
+        });
+        if (!res.ok) throw new Error('Failed to save interest');
+    } catch (e) {
+        console.error('Error saving interest:', e);
+        alert('Failed to save interest. See console.');
+    }
+}
 
     async function renderTopicList() {
         const selectedInterests = await loadInterests();

@@ -268,11 +268,15 @@ class Interest(BaseModel):
     topic: str
     username: str
 
-@app.post("/interests")
+@app.post("/auth/interests")
 async def save_interest(interest: Interest):
-    # Save to DB logic here
+    result = users_collection.update_one(
+        {"username": interest.username},
+        {"$addToSet": {"topics": interest.topic}}  # add only if not present
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
     return {"message": f"Interest '{interest.topic}' saved for {interest.username}"}
-
 # === Login + Signup Proxies ===
 # @app.post("/login")
 # def login_user(req: LoginRequest):
