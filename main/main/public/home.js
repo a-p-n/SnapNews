@@ -87,3 +87,99 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
 });
+
+// Interest Modal Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('interest-modal');
+    const addInterestBtn = document.getElementById('add-interest-btn');
+    const closeBtn = document.querySelector('.modal .close');
+    const topicList = document.getElementById('topic-list');
+    const interestList = document.getElementById('interest-list');
+
+    const availableTopics = [
+        'Technology',
+        'Business',
+        'Sports',
+        'Science',
+        'Health',
+        'Entertainment',
+        'Politics',
+        'Environment'
+    ];
+
+    async function loadInterests() {
+        const username = localStorage.getItem("username");
+            try {
+                    const res = await fetch(`http://localhost:8000/auth/interests/${username}`);
+                    const data = await res.json();
+                    const interests = data.topics || [];
+
+                    interestList.innerHTML = '';
+                    interests.forEach(interest => {
+                        const li = document.createElement('li');
+                        li.textContent = interest;
+                        interestList.appendChild(li);
+                    });
+                    return interests;
+                } catch (e) {
+                    console.error('Error loading interests:', e);
+                    interestList.innerHTML = '<li>Failed to load interests.</li>';
+                    return [];
+                }
+            }
+
+    async function saveInterest(topic) {
+        try {
+            const res = await fetch('http://localhost:8000/interests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ topic })
+            });
+            if (!res.ok) throw new Error('Failed to save interest');
+        } catch (e) {
+            console.error('Error saving interest:', e);
+            alert('Failed to save interest. See console.');
+        }
+    }
+
+    async function renderTopicList() {
+        const selectedInterests = await loadInterests();
+        const remainingTopics = availableTopics.filter(topic => !selectedInterests.includes(topic));
+        topicList.innerHTML = '';
+        if (remainingTopics.length === 0) {
+            const li = document.createElement('li');
+            li.textContent = 'No more topics available';
+            li.style.cursor = 'default';
+            topicList.appendChild(li);
+        } else {
+            remainingTopics.forEach(topic => {
+                const li = document.createElement('li');
+                li.textContent = topic;
+                li.addEventListener('click', async () => {
+                    await saveInterest(topic);
+                    await loadInterests();
+                    modal.style.display = 'none';
+                });
+                topicList.appendChild(li);
+            });
+        }
+    }
+
+    addInterestBtn.addEventListener('click', () => {
+        modal.style.display = 'flex';
+        renderTopicList();
+    });
+
+    closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Initial load of interests
+    loadInterests();
+});

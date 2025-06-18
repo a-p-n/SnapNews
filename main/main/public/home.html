@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,43 +9,48 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="home.css">
 </head>
+
 <body>
     <div class="title-bar">
         <div class="logo">
             <i class="fas fa-newspaper"></i>
             <span id="snapnews" style="cursor: pointer;">SnapNews</span>
         </div>
-        
+
         <nav class="main-nav">
             <a href="/home" class="active"><i class="fas fa-home"></i> Home</a>
             <a href="/chatbot"><i class="fas fa-robot"></i> Chatbot</a>
         </nav>
-        
+
         <div class="user-controls">
             <div class="user-menu" onclick="toggleDropdown()">
                 <img id="user-avatar" class="user-avatar"
                     src="https://ui-avatars.com/api/?name=John+Doe&background=4361ee&color=fff" alt="User">
                 <span id="user-name">User</span>
-        
+
                 <div class="dropdown-menu" id="userDropdown">
                     <a href="/login">Logout</a>
                 </div>
-            </div>    
-        </div>    
+            </div>
+        </div>
     </div>
 
     <div class="container">
         <aside class="user-sidebar">
             <div class="user-profile">
-                <img id="user-avatar" src="https://ui-avatars.com/api/?name=John+Doe&background=4361ee&color=fff" alt="User">
+                <img id="user-avatar" src="https://ui-avatars.com/api/?name=John+Doe&background=4361ee&color=fff"
+                    alt="User">
                 <h3 id="sidebar-display">User</h3>
                 <p>Premium Member</p>
             </div>
-            
-            
+
+            <div class="user-interests">
+                <h4>Your Interests</h4>
+                <ul id="interest-list"></ul>
+            </div>
+
             <div class="quick-actions">
-                <button class="btn-primary"><i class="fas fa-plus"></i> Add Interest</button>
-              
+                <button class="btn-primary" id="add-interest-btn"><i class="fas fa-plus"></i> Add Interest</button>
             </div>
         </aside>
 
@@ -53,17 +59,27 @@
                 <h2>Today's Digest</h2>
                 <button id="updateNewsBtn" class="btn-primary"><i class="fas fa-sync-alt"></i> Update News</button>
             </div>
-            
+
             <div class="news-cards">
                 <!-- Dynamic -->
             </div>
-            
+
             <div class="load-more">
                 <button class="btn-primary">Load More Stories</button>
             </div>
         </main>
     </div>
 
+    <!-- Interest Modal -->
+    <div id="interest-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Select an Interest</h2>
+            <ul id="topic-list" class="topic-list"></ul>
+        </div>
+    </div>
+
     <script src="home.js"></script>
 </body>
+
 </html>
