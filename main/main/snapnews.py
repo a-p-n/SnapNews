@@ -16,9 +16,9 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
+import threading
+scraper_lock = threading.Lock()
 load_dotenv()
-
 app = FastAPI(title="SnapNews Backend: Chat + Translation + Summarization + Auth")
 
 # Serve static files
@@ -46,6 +46,8 @@ genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 client = MongoClient("mongodb://localhost:27017/")
 db = client["snapnews_db"]
 collection = db["articles"]
+auth_db = client["snapnews_auth"]
+users_collection = auth_db["users"]
 
 # === Load Models ===
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
@@ -78,74 +80,103 @@ class SignupRequest(BaseModel):
     password: str
 
 # === Summarizer ===
-def summarize_with_pegasus(text):
+def summarize_with_pegasus_and_classify(text: str):
+    # Step 1: Summarize with Pegasus
     inputs = pegasus_tokenizer(text, truncation=True, padding='longest', return_tensors="pt")
-    summary_ids = pegasus_model.generate(inputs["input_ids"], max_length=60, min_length=15, length_penalty=2.0)
-    return pegasus_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+    summary_ids = pegasus_model.generate(
+        inputs["input_ids"], 
+        max_length=60, 
+        min_length=15, 
+        length_penalty=2.0
+    )
+    summary = pegasus_tokenizer.decode(summary_ids[0], skip_special_tokens=True)
+
+    # Step 2: Classify domain with Gemini
+    prompt = (
+        "Classify the following news summary into one domain category. "
+        "Valid domains are: Politics, Technology, Health, Sports, Business, Education, Entertainment, Environment, Conflict, International, Crime, or Other.\n\n"
+        f"Summary: {summary}\n\n"
+        "Domain:"
+    )
+    try:
+        response = gemini_model.generate_content(prompt)
+        domain = response.text.strip().title()
+    except Exception as e:
+        print(f"Gemini domain classification failed: {e}")
+        domain = "Other"
+
+    return summary, domain
+
+
 
 # === News Scraper Job ===
 def fetch_and_store_articles():
-    print("Scraping news...")
-
-    RSS_FEEDS = {
-        "BBC": "https://feeds.bbci.co.uk/hindi/rss.xml",
-        "Hindu": "https://www.thehindu.com/news/national/?service=rss"
-    }
-
-    articles = []
-    for source, feed_url in RSS_FEEDS.items():
-        parsed = feedparser.parse(feed_url)
-        for entry in parsed.entries:
-            try:
-                ts = time.strftime("%Y-%m-%d %H:%M:%S", entry.published_parsed)
-            except:
-                continue
-            articles.append((source, entry, ts))
-
-    articles.sort(key=lambda x: x[2], reverse=True)
-
-    for i, (source, entry, ts) in enumerate(articles):
-        if collection.find_one({"Link": entry.link}):
-            continue
-        title = entry.title
-        summary_text = entry.get("summary", "")
-        lang = detect(title) if title else "en"
-
-        if lang != "en":
-            try:
-                translation_req = TranslationRequest(text=title, source_lang=lang, target_lang="en")
-                title = translate(translation_req)["translation"]
-
-                translation_req_summary = TranslationRequest(text=summary_text, source_lang=lang, target_lang="en")
-                summary_text = translate(translation_req_summary)["translation"]
-            except Exception as e:
-                print(f"Translation failed: {e}")
-                continue
-
-        try:
-            final_summary = summarize_with_pegasus(summary_text)
-        except:
-            final_summary = summary_text
-
-        document = {
-            "Index": i,
-            "Title": title,
-            "Link": entry.link,
-            "Source": source,
-            "Timestamp": ts,
-            "Language": lang,
-            "Summary": final_summary
+    if not scraper_lock.acquire(blocking=False):
+        print("Scraper already running. Skipping this run.")
+        return
+    try:
+        print("Scraping news...")
+        RSS_FEEDS = {
+            "BBC": "https://feeds.bbci.co.uk/hindi/rss.xml",
+            "Hindu": "https://www.thehindu.com/news/national/?service=rss"
         }
+        articles = []
+        for source, feed_url in RSS_FEEDS.items():
+            parsed = feedparser.parse(feed_url)
+            for entry in parsed.entries:
+                try:
+                    ts = time.strftime("%Y-%m-%d %H:%M:%S", entry.published_parsed)
+                except:
+                    continue
+                articles.append((source, entry, ts))
 
-        collection.insert_one(document)
-        print(title)
+        articles.sort(key=lambda x: x[2], reverse=True)
 
-    print("Scraping complete.")
+        for i, (source, entry, ts) in enumerate(articles):
+            if collection.find_one({"Title": entry.title,"Link": entry.link}):
+                continue
+            title = entry.title
+            summary_text = entry.get("summary", "")
+            lang = detect(title) if title else "en"
+
+            if lang != "en":
+                try:
+                    translation_req = TranslationRequest(text=title, source_lang=lang, target_lang="en")
+                    title = translate(translation_req)["translation"]
+
+                    translation_req_summary = TranslationRequest(text=summary_text, source_lang=lang, target_lang="en")
+                    summary_text = translate(translation_req_summary)["translation"]
+                except Exception as e:
+                    print(f"Translation failed: {e}")
+                    continue
+
+            try:
+                final_summary, domain = summarize_with_pegasus_and_classify(summary_text)
+            except:
+                final_summary = summary_text
+
+            document = {
+                "Index": i,
+                "Title": title,
+                "Link": entry.link,
+                "Source": source,
+                "Timestamp": ts,
+                "Language": lang,
+                "Summary": final_summary,
+                "Domain": domain
+            }
+
+            collection.insert_one(document)
+            print(title)
+
+        print("Scraping complete.")
+    finally:
+        scraper_lock.release()
 
 @app.on_event("startup")
 async def initial_run():
     import threading
-    threading.Thread(target=fetch_and_store_articles).start()
+    threading.Thread(target=fetch_and_store_articles,daemon=True).start()
 
 @app.get("/update_news")
 def update_news(background_tasks: BackgroundTasks):
@@ -170,7 +201,7 @@ def gemini_rag_chat(req: ChatRequest):
         context = "\n".join(f"- {docs[i]}" for i in top_indices[0])
 
         prompt = (
-            f"You are a news assistant. Use the following context to answer the user's question.\n\n"
+            f"You are a news assistant. Any unrelevant queries should be responded with \"I am a news assistant and I am unable to process any queries not related to my defined scope. Please ask relevant questions\" Use the following context to answer the user's question.\n\n"
             f"Context:\n{context}\n\nQuestion: {req.question}\nAnswer:"
         )
 
@@ -197,11 +228,40 @@ def translate(req: TranslationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from fastapi import Query
+
+from typing import Optional
+from fastapi import Query
+
 @app.get("/news")
-def get_news():
+def get_news(username: Optional[str] = Query(None, description="Username to filter news based on user topics")):
     try:
-        news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
+        # If no username is provided, return general news
+        if not username:
+            news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
+            return news
+
+        # Try to get the user document
+        user = users_collection.find_one({"username": username}, {"topics": 1})
+
+        # If user not found or no topics, fallback to all news
+        if not user or "topics" not in user or not user["topics"]:
+            news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
+            return news
+
+        # Build filter for topics
+        topics = user["topics"]
+        topic_filters = [{"$or": [
+            {"Title": {"$regex": topic, "$options": "i"}},
+            {"Summary": {"$regex": topic, "$options": "i"}}
+        ]} for topic in topics]
+
+        query = {"$or": topic_filters}
+
+        # Fetch filtered news
+        news = list(collection.find(query, {"_id": 0}).sort("Timestamp", -1).limit(20))
         return news
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
