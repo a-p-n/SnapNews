@@ -236,34 +236,42 @@ from fastapi import Query
 @app.get("/news")
 def get_news(username: Optional[str] = Query(None, description="Username to filter news based on user topics")):
     try:
-        # If no username is provided, return general news
         if not username:
-            news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
-            return news
+            return list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
 
-        # Try to get the user document
         user = users_collection.find_one({"username": username}, {"topics": 1})
 
-        # If user not found or no topics, fallback to all news
         if not user or "topics" not in user or not user["topics"]:
-            news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
-            return news
+            return list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
 
-        # Build filter for topics
         topics = user["topics"]
-        topic_filters = [{"$or": [
-            {"Title": {"$regex": topic, "$options": "i"}},
-            {"Summary": {"$regex": topic, "$options": "i"}}
-        ]} for topic in topics]
 
-        query = {"$or": topic_filters}
+        query = {
+            "$or": [
+                {"Title": {"$regex": topic, "$options": "i"}} for topic in topics
+            ] + [
+                {"Summary": {"$regex": topic, "$options": "i"}} for topic in topics
+            ]
+        }
 
-        # Fetch filtered news
         news = list(collection.find(query, {"_id": 0}).sort("Timestamp", -1).limit(20))
+        
+        # Optional fallback
+        if not news:
+            news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(10))
+
         return news
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+class Interest(BaseModel):
+    topic: str
+    username: str
+
+@app.post("/interests")
+async def save_interest(interest: Interest):
+    # Save to DB logic here
+    return {"message": f"Interest '{interest.topic}' saved for {interest.username}"}
 
 # === Login + Signup Proxies ===
 # @app.post("/login")
