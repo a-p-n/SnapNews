@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
@@ -267,7 +267,12 @@ def get_news(username: Optional[str] = Query(None, description="Username to filt
 class Interest(BaseModel):
     topic: str
     username: str
-
+@app.get("/auth/user")
+def get_user(username: str):
+    user = users_collection.find_one({"username": username}, {"_id": 0, "topics": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 @app.post("/auth/interests")
 async def save_interest(interest: Interest):
     result = users_collection.update_one(
@@ -277,6 +282,23 @@ async def save_interest(interest: Interest):
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": f"Interest '{interest.topic}' saved for {interest.username}"}
+@app.get("/auth/interests/{username}")
+async def get_interests(username: str):
+    user = users_collection.find_one({"username": username}, {"_id": 0, "topics": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"topics": user.get("topics", [])}
+
+
+@app.delete("/auth/interests")
+async def remove_interest(interest : Interest):
+    result = users_collection.update_one(
+        {"username": interest.username},
+        {"$pull": {"topics": interest.topic}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": f"Interest '{interest.topic}' removed for {interest.username}"}
 # === Login + Signup Proxies ===
 # @app.post("/login")
 # def login_user(req: LoginRequest):

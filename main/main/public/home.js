@@ -1,3 +1,4 @@
+
 document.getElementById('snapnews').addEventListener('click', function() {
     window.location.href = '/home';
 });
@@ -109,26 +110,46 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     async function loadInterests() {
-        const username = localStorage.getItem("username");
-            try {
-                    const res = await fetch(`http://localhost:8000/auth/interests/${username}`);
-                    const data = await res.json();
-                    const interests = data.topics || [];
+    const username = localStorage.getItem("username");
+    try {
+        const res = await fetch(`http://localhost:8000/auth/interests/${username}`);
+        const data = await res.json();
+        const interests = data.topics || [];
 
-                    interestList.innerHTML = '';
-                    interests.forEach(interest => {
-                        const li = document.createElement('li');
-                        li.textContent = interest;
-                        interestList.appendChild(li);
-                    });
-                    return interests;
-                } catch (e) {
-                    console.error('Error loading interests:', e);
-                    interestList.innerHTML = '<li>Failed to load interests.</li>';
-                    return [];
-                }
-            }
+        if (interestList) {
+    interestList.innerHTML = '';
 
+    interests.forEach(topic => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            ${topic}
+            <button class="delete-btn" title="Remove ${topic}">&times;</button>
+        `;
+        li.querySelector(".delete-btn").onclick = () => removeInterest(topic);
+        interestList.appendChild(li);
+    });
+}
+
+        return interests;
+    } catch (e) {
+        console.error('Error loading interests:', e);
+        interestList.innerHTML = '<li>Failed to load interests.</li>';
+        return [];
+    }
+}
+async function removeInterest(topic) {
+    const username = localStorage.getItem("username");
+    const res = await fetch("http://localhost:8000/auth/interests", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, topic })
+    });
+    const data = await res.json();
+    console.log(data);
+    loadInterests(); // Refresh list
+}
+
+    
     async function saveInterest(topic) {
     const username = localStorage.getItem("username");  // assume it's stored on login
     if (!username) {
