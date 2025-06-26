@@ -17,6 +17,22 @@ from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import threading
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from peft import PeftModel
+import torch
+import faiss
+from fastapi import HTTPException
+
+
+
+
+model_dir = r"C:\Users\navee\Downloads" 
+tokenizer = AutoTokenizer.from_pretrained(model_dir)
+base_model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-base")
+model = PeftModel.from_pretrained(base_model, model_dir)
+model.eval()
+# === Load tokenizer and model once during app startup ===
+
 scraper_lock = threading.Lock()
 load_dotenv()
 app = FastAPI(title="SnapNews Backend: Chat + Translation + Summarization + Auth")
@@ -39,7 +55,6 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# === Environment & Mongo ===
 os.environ["GOOGLE_API_KEY"] = os.getenv("API_KEY")
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
@@ -62,7 +77,7 @@ pegasus_model = PegasusForConditionalGeneration.from_pretrained("google/pegasus-
 # === Schemas ===
 class ChatRequest(BaseModel):
     question: str
-    top_k: int = 3
+    top_k: int = 10
 
 class TranslationRequest(BaseModel):
     text: str
@@ -79,9 +94,7 @@ class SignupRequest(BaseModel):
     username: str
     password: str
 
-# === Summarizer ===
 def summarize_with_pegasus_and_classify(text: str):
-    # Step 1: Summarize with Pegasus
     inputs = pegasus_tokenizer(text, truncation=True, padding='longest', return_tensors="pt")
     summary_ids = pegasus_model.generate(
         inputs["input_ids"], 
@@ -184,29 +197,47 @@ def update_news(background_tasks: BackgroundTasks):
     return {"status": "News scraping scheduled in background."}
 
 @app.post("/chat")
-def gemini_rag_chat(req: ChatRequest):
+def flant5_rag_chat(req: ChatRequest):
     try:
         cursor = collection.find({"Summary": {"$exists": True}}, {"Summary": 1, "_id": 0})
         docs = [doc["Summary"] for doc in cursor if doc["Summary"].strip()]
         if not docs:
             raise HTTPException(status_code=404, detail="No summaries available")
 
+        # Embed documents
         doc_embeddings = embedder.encode(docs, convert_to_numpy=True)
         dimension = doc_embeddings.shape[1]
         index = faiss.IndexFlatL2(dimension)
         index.add(doc_embeddings)
 
+        # Embed the question
         q_embed = embedder.encode([req.question], convert_to_numpy=True)
         _, top_indices = index.search(q_embed, req.top_k)
         context = "\n".join(f"- {docs[i]}" for i in top_indices[0])
 
+        # Construct input prompt
         prompt = (
-            f"You are a news assistant. Any unrelevant queries should be responded with \"I am a news assistant and I am unable to process any queries not related to my defined scope. Please ask relevant questions\" Use the following context to answer the user's question.\n\n"
-            f"Context:\n{context}\n\nQuestion: {req.question}\nAnswer:"
-        )
+    f"You are a helpful news assistant. You must answer the user's question based ONLY on the context below. "
+    f"If the context is insufficient or unrelated, respond with:\n"
+    f"\"I am a news assistant and I am unable to process any queries not related to my defined scope. "
+    f"Please ask relevant questions.\"\n\n"
+    f"Context:\n{context}\n\n"
+    f"Question: {req.question}\n\n"
+    f"Answer:"
+)
 
-        response = gemini_model.generate_content(prompt)
-        return {"question": req.question, "context": context, "answer": response.text}
+        # Generate answer with FLAN-T5
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=150,
+                do_sample=False,
+                num_beams=4
+            )
+
+        answer = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return {"question": req.question, "context": context, "answer": answer}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
