@@ -56,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <p class="summary">${article.Summary}</p>
         <div class="card-footer">
           <a href="${article.Link}" target="_blank"><i class="fas fa-external-link-alt"></i> Read More</a>
-          <button class="save-btn"><i class="far fa-bookmark"></i></button>
         </div>`;
         container.appendChild(card);
     }
@@ -73,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = '<p>Failed to load news.</p>';
         }
     }
+    loadNews();
     updateBtn.addEventListener('click', async () => {
         updateBtn.disabled = true;
         updateBtn.textContent = 'Updating…';
@@ -99,14 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const interestList = document.getElementById('interest-list');
 
     const availableTopics = [
-        'Technology',
-        'Business',
-        'Sports',
-        'Science',
-        'Health',
-        'Entertainment',
-        'Politics',
-        'Environment'
+        'Politics', 'Technology', 'Health', 'Sports', 'Business', 'Education', 
+        'Entertainment', 'Environment', 'Conflict', 'International', 'Crime'
     ];
 
     async function loadInterests() {

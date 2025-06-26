@@ -1,12 +1,17 @@
 document.getElementById('snapnews').addEventListener('click', function () {
     window.location.href = '/home';
 });
-
 function toggleDropdown() {
     const dropdown = document.getElementById("userDropdown");
     dropdown.style.display = dropdown.style.display === "flex" ? "none" : "flex";
 }
+window.addEventListener('DOMContentLoaded', () => {
+    const username = localStorage.getItem('username') || "User";
+    const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=4361ee&color=fff`;
 
+    document.querySelectorAll('#user-name').forEach(el => el.textContent = username);
+    document.querySelectorAll('#user-avatar').forEach(el => el.src = avatarUrl);
+});
 document.addEventListener('click', function (e) {
     const menu = document.querySelector('.user-menu');
     const dropdown = document.getElementById("userDropdown");

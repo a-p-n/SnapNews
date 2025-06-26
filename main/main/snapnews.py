@@ -244,19 +244,12 @@ def get_news(username: Optional[str] = Query(None, description="Username to filt
         if not user or "topics" not in user or not user["topics"]:
             return list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(20))
 
-        topics = user["topics"]
+        topics = [t.title() for t in user["topics"]] 
 
-        query = {
-            "$or": [
-                {"Title": {"$regex": topic, "$options": "i"}} for topic in topics
-            ] + [
-                {"Summary": {"$regex": topic, "$options": "i"}} for topic in topics
-            ]
-        }
+        query = {"Domain": {"$in": topics}}
 
         news = list(collection.find(query, {"_id": 0}).sort("Timestamp", -1).limit(20))
-        
-        # Optional fallback
+
         if not news:
             news = list(collection.find({}, {"_id": 0}).sort("Timestamp", -1).limit(10))
 
